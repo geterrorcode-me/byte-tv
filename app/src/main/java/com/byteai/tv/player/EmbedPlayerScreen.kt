@@ -11,6 +11,9 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,12 +49,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import kotlinx.coroutines.delay
 
 /**
- * Embed player via WebView with a D-pad-reachable mute/unmute overlay.
+ * Embed player via WebView with an auto-hiding D-pad-reachable mute/unmute overlay.
  * - Loads the channel's official embed page.
- * - Starts MUTED (so no surprise audio); user can unmute via the floating button.
- * - The mute button is focusable and reachable by the TV remote D-pad.
+ * - Starts MUTED (so no surprise audio).
+ * - The mute button auto-hides after a few seconds (like YouTube controls); tap the
+ *   screen / press any D-pad key to bring it back.
+ * - Focusable + reachable by the TV remote D-pad.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -59,7 +66,16 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
     val activity = context as? Activity
 
     var muted by remember { mutableStateOf(true) }
+    var controlsVisible by remember { mutableStateOf(true) }
     val focusRequester = remember { FocusRequester() }
+
+    // Auto-hide controls after 3.5s of no interaction
+    LaunchedEffect(controlsVisible, muted) {
+        if (controlsVisible) {
+            delay(3500)
+            controlsVisible = false
+        }
+    }
 
     val webView = remember(embedUrl) {
         WebView(context).apply {
@@ -92,7 +108,12 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
         }
     }
 
-    Box(modifier = modifier.fillMaxSize().background(ComposeColor.Black)) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(ComposeColor.Black)
+            .clickable { controlsVisible = true }  // tap screen to show controls
+    ) {
         AndroidView(
             factory = { ctx ->
                 FrameLayout(ctx).apply {
@@ -113,15 +134,17 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // Floating mute/unmute button (top-right), D-pad reachable, defaults to muted
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+        // Auto-hiding mute/unmute button (top-right)
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
         ) {
             MuteButton(
                 muted = muted,
                 focusRequester = focusRequester,
+                onInteraction = { controlsVisible = true },
                 onClick = {
                     muted = !muted
                     setWebViewMuted(webView, muted)
@@ -135,6 +158,7 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
 private fun MuteButton(
     muted: Boolean,
     focusRequester: FocusRequester,
+    onInteraction: () -> Unit,
     onClick: () -> Unit
 ) {
     Box(
@@ -142,15 +166,13 @@ private fun MuteButton(
             .size(56.dp)
             .clip(CircleShape)
             .background(if (muted) ComposeColor(0xCC000000) else ComposeColor(0xCC1E3A1E))
-            .border(
-                width = 2.dp,
-                color = ComposeColor(0xFF02DEEF),
-                shape = CircleShape
-            )
+            .border(2.dp, ComposeColor(0xFF02DEEF), CircleShape)
             .focusRequester(focusRequester)
             .focusable()
-            .clickable { onClick() }
+            .clickable { onInteraction(); onClick() }
             .onKeyEvent { event ->
+                // Any key wakes controls; Enter/DirectionCenter toggles mute
+                onInteraction()
                 if (event.type == KeyEventType.KeyUp) {
                     when (event.key) {
                         Key.Enter, Key.DirectionCenter -> { onClick(); true }
