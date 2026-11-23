@@ -139,19 +139,18 @@ private fun MuteButton(
     focusRequester: FocusRequester,
     onClick: () -> Unit
 ) {
-    var focused by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .size(56.dp)
             .clip(CircleShape)
             .background(if (muted) ComposeColor(0xCC000000) else ComposeColor(0xCC1E3A1E))
             .border(
-                width = if (focused) 3.dp else 1.dp,
-                color = if (focused) ComposeColor(0xFF02DEEF) else ComposeColor(0x66FFFFFF),
+                width = 2.dp,
+                color = ComposeColor(0xFF02DEEF),
                 shape = CircleShape
             )
             .focusRequester(focusRequester)
-            .focusable(onFocusChanged = { focused = it.isFocused })
+            .focusable()
             .clickable { onClick() }
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyUp &&
