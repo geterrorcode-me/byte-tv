@@ -82,7 +82,8 @@ object PlaylistRepository {
                         group = attrs["group-title"],
                         userAgent = null,
                         referer = null,
-                        youtubeId = attrs["tvg-youtube"]
+                        youtubeId = attrs["tvg-youtube"],
+                        embedUrl = attrs["tvg-embed"]
                     )
                     pendingIsYt = !attrs["tvg-youtube"].isNullOrBlank()
                     pendingUa = null

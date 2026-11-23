@@ -377,19 +377,16 @@ https://banjartv.siar.us/banjartv/live/playlist.m3u8
 https://lnd0t3b922.tenbytecdn.com/ta-sg1/90369cf5-6ac2-411d-b3d0-15fae10a2e2c/master.m3u8
 #EXTINF:-1 tvg-name="Metro TV" group-title="Berita",Metro TV
 https://edge.medcom.id/live-edge/smil:metro.smil/playlist.m3u8
-#EXTINF:-1 tvg-name="RCTI" group-title="Nasional & Umum" tvg-youtube="7CsVqK5eloc",RCTI
-#EXTINF:-1 tvg-name="MNCTV" group-title="Nasional & Umum" tvg-youtube="TehtO84kW_c",MNCTV
-#EXTINF:-1 tvg-name="GTV" group-title="Nasional & Umum" tvg-youtube="TehtO84kW_c",GTV
-#EXTINF:-1 tvg-name="Global TV" group-title="Nasional & Umum" tvg-youtube="mF3s5-6mIH4",Global TV
-#EXTINF:-1 tvg-name="Trans7" group-title="Nasional & Umum" tvg-youtube="42yNI2Z3GR0",Trans7
-#EXTINF:-1 tvg-name="TransTV" group-title="Nasional & Umum" tvg-youtube="4z21olLMChg",TransTV
-#EXTINF:-1 tvg-name="SCTV" group-title="Nasional & Umum" tvg-youtube="jgRAf4RM78Q",SCTV
-#EXTINF:-1 tvg-name="Indosiar" group-title="Nasional & Umum" tvg-youtube="OO67HJu4reE",Indosiar
-#EXTINF:-1 tvg-name="ANTV" group-title="Nasional & Umum" tvg-youtube="AxdupvCXimQ",ANTV
-#EXTINF:-1 tvg-name="Kompas TV" group-title="Nasional & Umum" tvg-youtube="JdJV7Alkcpk",Kompas TV
-#EXTINF:-1 tvg-name="Metro TV" group-title="Nasional & Umum" tvg-youtube="Bu-bBy3oqMU",Metro TV
-#EXTINF:-1 tvg-name="tvOne" group-title="Nasional & Umum" tvg-youtube="gZ7PDKkm1QE",tvOne
-#EXTINF:-1 tvg-name="CNN Indonesia" group-title="Nasional & Umum" tvg-youtube="OPGeq3h-swk",CNN Indonesia
-#EXTINF:-1 tvg-name="CNBC Indonesia" group-title="Nasional & Umum" tvg-youtube="SBdXYs7_ff0",CNBC Indonesia
-#EXTINF:-1 tvg-name="iNews" group-title="Nasional & Umum" tvg-youtube="1k8MjNzqiZU",iNews
-#EXTINF:-1 tvg-name="TVRI Nasional" group-title="Nasional & Umum" tvg-youtube="OqIGHBreNso",TVRI Nasional
+#EXTINF:-1 tvg-name="RCTI" group-title="Nasional & Umum" tvg-embed="https://sindikasi.inews.id/embed/video/YWdlbnQ9ZGVza3RvcCZ1cmw9aHR0cHMlM0ElMkYlMkZlbWJlZC5yY3RpcGx1cy5jb20lMkZsaXZlJTJGcmN0aSUyRmluZXdzaWQmaGVpZ2h0PTEwMCUyNSZ3aWR0aD0xMDAlMjU=",RCTI
+#EXTINF:-1 tvg-name="GTV" group-title="Nasional & Umum" tvg-embed="https://sindikasi.inews.id/embed/video/YWdlbnQ9ZGVza3RvcCZ1cmw9aHR0cHMlM0ElMkYlMkZlbWJlZC5yY3RpcGx1cy5jb20lMkZsaXZlJTJGZ3R2JTJGaW5ld3NpZCZoZWlnaHQ9MTAwJTI1JndpZHRoPTEwMCUyNQ==",GTV
+#EXTINF:-1 tvg-name="iNews" group-title="Nasional & Umum" tvg-embed="https://sindikasi.inews.id/embed/video/YWdlbnQ9ZGVza3RvcCZ1cmw9aHR0cHMlM0ElMkYlMkZlbWJlZC5yY3RpcGx1cy5jb20lMkZsaXZlJTJGaW5ld3MlMkZpbmV3c2lkJmhlaWdodD0xMDAlMjUmd2lkdGg9MTAwJTI1",iNews
+#EXTINF:-1 tvg-name="MNCTV" group-title="Nasional & Umum" tvg-embed="https://sindikasi.inews.id/embed/video/YWdlbnQ9ZGVza3RvcCZ1cmw9aHR0cHMlM0ElMkYlMkZlbWJlZC5yY3RpcGx1cy5jb20lMkZsaXZlJTJGbW5jdHYlMkZpbmV3c2lkJmhlaWdodD0xMDAlMjUmd2lkdGg9MTAwJTI1",MNCTV
+#EXTINF:-1 tvg-name="IDX" group-title="Nasional & Umum" tvg-embed="https://sindikasi.inews.id/embed/video/YWdlbnQ9ZGVza3RvcCZ1cmw9aHR0cHMlM0ElMkYlMkZjZG4tbGl2ZXR2LXN0dWRpby5tZXR1YmUuaWQlMkZpZHhjaGFubmVsLm0zdTgmaGVpZ2h0PTEwMCUyNSZ3aWR0aD0xMDAlMjU=",IDX
+#EXTINF:-1 tvg-name="MNCNEWS" group-title="Nasional & Umum" tvg-embed="https://sindikasi.inews.id/embed/video/YWdlbnQ9ZGVza3RvcCZ1cmw9aHR0cHMlM0ElMkYlMkZjZG4tbGl2ZXR2LXN0dWRpby5tZXR1YmUuaWQlMkZtbmNuZXdzLm0zdTgmaGVpZ2h0PTEwMCUyNSZ3aWR0aD0xMDAlMjU=",MNCNEWS
+#EXTINF:-1 tvg-name="Trans7" group-title="Nasional & Umum" tvg-embed="https://20.detik.com/watch/livestreaming-trans7",Trans7
+#EXTINF:-1 tvg-name="TransTV" group-title="Nasional & Umum" tvg-embed="https://20.detik.com/watch/livestreaming-transtv",TransTV
+#EXTINF:-1 tvg-name="CNN Indonesia" group-title="Nasional & Umum" tvg-embed="https://www.cnnindonesia.com/tv/embed?ref=transmedia",CNN Indonesia
+#EXTINF:-1 tvg-name="SCTV" group-title="Nasional & Umum" tvg-embed="https://www.vidio.com/live/204-sctv-tv-stream/embed?autoplay=true&player_only=true&live_chat=false&mute=false",SCTV
+#EXTINF:-1 tvg-name="Metro TV" group-title="Nasional & Umum" tvg-embed="https://www.dailymotion.com/embed/video/k236ofBIxajxDiti8CY?autoPlay=1&queue-enable=false",Metro TV
+#EXTINF:-1 tvg-name="Kompas TV" group-title="Nasional & Umum" tvg-embed="https://www.dailymotion.com/embed/video/k46igSmSMGBIiWsXtWk?autoplay=1",Kompas TV
+#EXTINF:-1 tvg-name="Berita Satu" group-title="Nasional & Umum" tvg-embed="https://beritasatu.tv/playstream.php",Berita Satu

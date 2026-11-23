@@ -7,5 +7,6 @@ data class Channel(
     val group: String? = null,
     val userAgent: String? = null,
     val referer: String? = null,
-    val youtubeId: String? = null
+    val youtubeId: String? = null,
+    val embedUrl: String? = null
 )

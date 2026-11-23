@@ -24,6 +24,7 @@ import com.byteai.tv.data.Channel
 import com.byteai.tv.data.PlaylistRepository
 import com.byteai.tv.player.PlayerScreen
 import com.byteai.tv.player.YouTubePlayerScreen
+import com.byteai.tv.player.EmbedPlayerScreen
 import com.byteai.tv.ui.ChannelList
 
 @UnstableApi
@@ -70,20 +71,29 @@ fun ByteTVApp() {
 
     val current = active
     if (current != null) {
-        // Fullscreen player: YouTube live (WebView) or HLS/DASH (ExoPlayer)
+        // Fullscreen player: YouTube live / Embed page (WebView) / HLS-DASH (ExoPlayer)
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-            if (!current.youtubeId.isNullOrBlank()) {
-                YouTubePlayerScreen(
-                    videoId = current.youtubeId,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                PlayerScreen(
-                    videoUrl = current.url,
-                    userAgent = current.userAgent,
-                    referer = current.referer,
-                    modifier = Modifier.fillMaxSize()
-                )
+            when {
+                !current.youtubeId.isNullOrBlank() -> {
+                    YouTubePlayerScreen(
+                        videoId = current.youtubeId,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                !current.embedUrl.isNullOrBlank() -> {
+                    EmbedPlayerScreen(
+                        embedUrl = current.embedUrl,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                else -> {
+                    PlayerScreen(
+                        videoUrl = current.url,
+                        userAgent = current.userAgent,
+                        referer = current.referer,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     } else {
