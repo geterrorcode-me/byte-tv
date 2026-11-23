@@ -56,10 +56,13 @@ fun ChannelList(
     }
 
     // Group filtered channels by their group-title
-    val grouped = remember(filtered) {
-        filtered.groupBy { it.group?.ifBlank { "Lainnya" } ?: "Lainnya" }
-            .toSortedMap()
-    }
+        val grouped = remember(filtered) {
+            // Dedupe by URL so LazyColumn keys stay unique (prevents crash)
+            val seen = HashSet<String>()
+            filtered.filter { seen.add(it.url) }
+                .groupBy { it.group?.ifBlank { "Lainnya" } ?: "Lainnya" }
+                .toSortedMap()
+        }
 
     Column(modifier = Modifier.fillMaxSize().background(Bg)) {
         // Header
@@ -118,7 +121,9 @@ fun ChannelList(
                             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                         )
                     }
-                    items(items, key = { it.url }) { ch -> ChannelRow(ch) { onChannelClick(ch) } }
+                    items(items, key = { "${it.name}_${it.url.hashCode()}_${it.url.take(24)}" }) { ch ->
+                        ChannelRow(ch) { onChannelClick(ch) }
+                    }
                 }
             }
         }
