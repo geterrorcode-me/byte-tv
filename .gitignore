@@ -1,0 +1,17 @@
+# Built APK outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+local.properties
+*.iml
+.idea/
+.cxx/
+
+# OS
+.DS_Store
