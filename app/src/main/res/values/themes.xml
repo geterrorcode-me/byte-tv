@@ -1,6 +1,9 @@
 <resources>
     <style name="Theme.ByteTV" parent="android:Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowBackground">#121326</item>
+        <item name="android:colorAccent">#02DEEF</item>
+        <item name="android:statusBarColor">#121326</item>
+        <item name="android:navigationBarColor">#121326</item>
     </style>
 </resources>

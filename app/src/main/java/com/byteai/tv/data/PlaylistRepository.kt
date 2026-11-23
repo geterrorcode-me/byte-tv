@@ -1,5 +1,6 @@
 package com.byteai.tv.data
 
+import android.content.Context
 import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
@@ -19,6 +20,23 @@ object PlaylistRepository {
         fun onError(message: String)
     }
 
+    /**
+     * Load the bundled (offline-audited) channel list from assets.
+     * This is the curated list of channels that passed the connectivity audit.
+     */
+    fun loadLocal(context: Context, callback: Callback) {
+        executor.execute {
+            try {
+                val text = context.assets.open("channels.m3u").bufferedReader().use { it.readText() }
+                callback.onResult(parseM3U(text))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load local playlist", e)
+                callback.onError(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    /** Load a remote M3U playlist. */
     fun load(url: String, callback: Callback) {
         executor.execute {
             try {
@@ -29,7 +47,11 @@ object PlaylistRepository {
                 }
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
                 val channels = parseM3U(text)
-                callback.onResult(channels)
+                if (channels.isEmpty()) {
+                    callback.onError("Playlist kosong")
+                } else {
+                    callback.onResult(channels)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load playlist", e)
                 callback.onError(e.message ?: "Unknown error")
@@ -41,6 +63,7 @@ object PlaylistRepository {
         val lines = content.lineSequence().map { it.trim() }.iterator()
         val result = mutableListOf<Channel>()
         var pending: Channel? = null
+        var pendingName: String? = null
         while (lines.hasNext()) {
             val line = lines.next()
             when {
@@ -48,6 +71,7 @@ object PlaylistRepository {
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
                     val name = extractName(line)
                     val attrs = parseAttrs(line)
+                    pendingName = name
                     pending = Channel(
                         name = name,
                         url = "",
@@ -55,9 +79,8 @@ object PlaylistRepository {
                         group = attrs["group-title"]
                     )
                 }
-                line.startsWith("#") -> { /* skip other directives */ }
+                line.startsWith("#") -> { /* skip other directives like #EXTVLCOPT */ }
                 else -> {
-                    // URL line
                     val ch = pending?.copy(url = line) ?: Channel(name = line, url = line)
                     if (ch.url.isNotEmpty()) result.add(ch)
                     pending = null
@@ -68,7 +91,6 @@ object PlaylistRepository {
     }
 
     private fun extractName(line: String): String {
-        // name is after the last comma
         val idx = line.lastIndexOf(',')
         return if (idx >= 0) line.substring(idx + 1).trim() else "Channel"
     }

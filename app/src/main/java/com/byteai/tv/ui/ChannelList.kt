@@ -39,12 +39,12 @@ fun ChannelList(
     error: String?,
     onChannelClick: (Channel) -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0F1115))) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF121326))) {
         when {
             loading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF3DDC84)
+                    color = Color(0xFF02DEEF)
                 )
             }
             error != null -> {
@@ -87,12 +87,12 @@ private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).background(Color(0xFF3DDC84), RoundedCornerShape(8.dp)),
+                modifier = Modifier.size(40.dp).background(Color(0xFF02DEEF), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = channel.name.take(1).uppercase(),
-                    color = Color.Black,
+                    color = Color(0xFF121326),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
