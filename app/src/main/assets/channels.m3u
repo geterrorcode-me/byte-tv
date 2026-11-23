@@ -398,7 +398,8 @@ embed://https://www.cnnindonesia.com/tv/embed?ref=transmedia
 embed://https://www.vidio.com/live/204-sctv-tv-stream/embed?autoplay=true&player_only=true&live_chat=false&mute=false
 #EXTINF:-1 tvg-name="Metro TV" group-title="Nasional & Umum" tvg-embed="https://www.dailymotion.com/embed/video/k236ofBIxajxDiti8CY?autoPlay=1&queue-enable=false",Metro TV
 embed://https://www.dailymotion.com/embed/video/k236ofBIxajxDiti8CY?autoPlay=1&queue-enable=false
-#EXTINF:-1 tvg-name="Kompas TV" group-title="Nasional & Umum" tvg-embed="https://www.dailymotion.com/embed/video/k46igSmSMGBIiWsXtWk?autoplay=1",Kompas TV
-embed://https://www.dailymotion.com/embed/video/k46igSmSMGBIiWsXtWk?autoplay=1
+#EXTINF:-1 tvg-name="Kompas TV" group-title="Nasional & Umum",Kompas TV
+yt://cOy8v5tGxOU
+yt://cOy8v5tGxOU
 #EXTINF:-1 tvg-name="Berita Satu" group-title="Nasional & Umum" tvg-embed="https://beritasatu.tv/playstream.php",Berita Satu
 embed://https://beritasatu.tv/playstream.php

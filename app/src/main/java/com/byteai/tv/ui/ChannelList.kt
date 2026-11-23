@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,12 +38,18 @@ import com.byteai.tv.data.Channel
 private val Accent = Color(0xFF02DEEF)
 private val Bg = Color(0xFF121326)
 private val CardBg = Color(0xFF1C2029)
+private val VisitedBg = Color(0xFF1E3A1E)       // dark green tint = visited
+private val VisitedAccent = Color(0xFF33CC66)    // green = visited
+private val VisitedText = Color(0xFF99FF99)
 
 @Composable
 fun ChannelList(
     channels: List<Channel>,
     loading: Boolean,
     error: String?,
+    visited: Set<String>,                 // set of channel URLs already opened
+    scrollToFirst: Boolean = false,        // when true, jump to top (after "reset")
+    onResetView: () -> Unit = {},
     onChannelClick: (Channel) -> Unit
 ) {
     var query by remember { mutableStateOf(TextFieldValue("")) }
@@ -55,14 +63,21 @@ fun ChannelList(
         }
     }
 
-    // Group filtered channels by their group-title
-        val grouped = remember(filtered) {
-            // Dedupe by URL so LazyColumn keys stay unique (prevents crash)
-            val seen = HashSet<String>()
-            filtered.filter { seen.add(it.url) }
-                .groupBy { it.group?.ifBlank { "Lainnya" } ?: "Lainnya" }
-                .toSortedMap()
+    val grouped = remember(filtered) {
+        val seen = HashSet<String>()
+        filtered.filter { seen.add(it.url) }
+            .groupBy { it.group?.ifBlank { "Lainnya" } ?: "Lainnya" }
+            .toSortedMap()
+    }
+
+    // Keep scroll position across back navigation
+    val listState = rememberLazyListState()
+    LaunchedEffect(scrollToFirst) {
+        if (scrollToFirst) {
+            listState.scrollToItem(0)
+            onResetView()
         }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Bg)) {
         // Header
@@ -76,6 +91,15 @@ fun ChannelList(
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp
             )
+            Spacer(Modifier.weight(1f))
+            // visited count
+            if (visited.isNotEmpty()) {
+                Text(
+                    text = "${visited.size} dibuka",
+                    color = Color(0xFF8A93A6),
+                    fontSize = 12.sp
+                )
+            }
         }
 
         // Search box
@@ -108,6 +132,7 @@ fun ChannelList(
                 Text("Tidak ada channel cocok", color = Color.White)
             }
             else -> LazyColumn(
+                state = listState,
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -122,7 +147,11 @@ fun ChannelList(
                         )
                     }
                     items(items, key = { "${it.name}_${it.url.hashCode()}_${it.url.take(24)}" }) { ch ->
-                        ChannelRow(ch) { onChannelClick(ch) }
+                        ChannelRow(
+                            channel = ch,
+                            isVisited = ch.url in visited,
+                            onClick = { onChannelClick(ch) }
+                        )
                     }
                 }
             }
@@ -131,9 +160,12 @@ fun ChannelList(
 }
 
 @Composable
-private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
+private fun ChannelRow(channel: Channel, isVisited: Boolean, onClick: () -> Unit) {
+    val cardColor = if (isVisited) VisitedBg else CardBg
+    val avatarColor = if (isVisited) VisitedAccent else Accent
+    val nameColor = if (isVisited) VisitedText else Color.White
     Surface(
-        color = CardBg,
+        color = cardColor,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
@@ -142,11 +174,11 @@ private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).background(Accent, RoundedCornerShape(8.dp)),
+                modifier = Modifier.size(40.dp).background(avatarColor, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = channel.name.take(1).uppercase(),
+                    text = if (isVisited) "✓" else channel.name.take(1).uppercase(),
                     color = Bg,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
@@ -155,12 +187,19 @@ private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(
                     text = channel.name,
-                    color = Color.White,
+                    color = nameColor,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (isVisited) {
+                    Text(
+                        text = "✓ sudah dibuka",
+                        color = Color(0xFF66BB66),
+                        fontSize = 11.sp
+                    )
+                }
             }
         }
     }

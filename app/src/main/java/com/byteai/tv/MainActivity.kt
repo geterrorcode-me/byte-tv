@@ -1,7 +1,6 @@
 package com.byteai.tv
 
 import android.app.Activity
-import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,13 +29,13 @@ import com.byteai.tv.data.Channel
 import com.byteai.tv.data.PlaylistRepository
 import com.byteai.tv.player.EmbedPlayerScreen
 import com.byteai.tv.player.PlayerScreen
+import com.byteai.tv.player.YouTubePlayerScreen
 import com.byteai.tv.ui.ChannelList
 
 @UnstableApi
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Make app draw edge-to-edge (needed for immersive player)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
@@ -45,25 +44,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    @Deprecated("Deprecated by Android")
-    override fun onBackPressed() {
-        // handled by BackHandler in Compose
-        super.onBackPressed()
-    }
-}
-
-private fun goFullscreen(activity: Activity) {
-    WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
-        hide(WindowInsetsCompat.Type.systemBars())
-        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    }
-}
-
-private fun exitFullscreen(activity: Activity) {
-    WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
-        show(WindowInsetsCompat.Type.systemBars())
     }
 }
 
@@ -78,24 +58,27 @@ fun ByteTVApp() {
     var error by remember { mutableStateOf<String?>(null) }
     var active by remember { mutableStateOf<Channel?>(null) }
 
-    // Enter immersive fullscreen + landscape while a video is playing; restore on exit.
+    // Track which channels have been opened (persists for the session)
+    var visited by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var scrollToFirst by remember { mutableStateOf(false) }
+
+    // Enter immersive fullscreen only (no forced landscape - user can rotate themselves)
     DisposableEffect(active != null) {
         if (active != null) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            activity?.let { goFullscreen(it) }
+            activity?.let { goImmersive(it) }
         } else {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            activity?.let { exitFullscreen(it) }
+            activity?.let { exitImmersive(it) }
         }
         onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            activity?.let { exitFullscreen(it) }
+            activity?.let { exitImmersive(it) }
         }
     }
 
-    // Back button: if a video is playing, go back to channel list instead of exiting the app.
+    // Back button: return to list, keep scroll position, mark as visited
     BackHandler(enabled = active != null) {
+        active?.let { visited = visited + it.url }
         active = null
+        // do NOT scroll to top; keep position
     }
 
     LaunchedEffect(Unit) {
@@ -113,11 +96,10 @@ fun ByteTVApp() {
 
     val current = active
     if (current != null) {
-        // Fullscreen player (immersive + landscape)
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
             when {
                 current.youtubeId != null -> {
-                    com.byteai.tv.player.YouTubePlayerScreen(
+                    YouTubePlayerScreen(
                         videoId = current.youtubeId!!,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -143,7 +125,23 @@ fun ByteTVApp() {
             channels = channels,
             loading = loading,
             error = error,
+            visited = visited,
+            scrollToFirst = scrollToFirst,
+            onResetView = { scrollToFirst = false },
             onChannelClick = { active = it }
         )
+    }
+}
+
+private fun goImmersive(activity: Activity) {
+    WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
+        hide(WindowInsetsCompat.Type.systemBars())
+        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+}
+
+private fun exitImmersive(activity: Activity) {
+    WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
+        show(WindowInsetsCompat.Type.systemBars())
     }
 }
