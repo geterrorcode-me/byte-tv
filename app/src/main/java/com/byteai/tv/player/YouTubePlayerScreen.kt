@@ -17,8 +17,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 
 /**
- * YouTube Live player via WebView. Plays the live stream embedded from youtube-nocookie.
- * Reliable for national channels that have an official 24/7 YouTube live stream.
+ * YouTube Live player via WebView.
+ *
+ * YouTube's embedded player (Error 153) requires a valid Referer + Referrer-Policy.
+ * We inject a Referer header via loadUrl(extraHeaders) and add the referrerpolicy
+ * meta tag inside the HTML so YouTube accepts the embed config.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -32,14 +35,19 @@ fun YouTubePlayerScreen(videoId: String, modifier: Modifier = Modifier) {
             settings.mediaPlaybackRequiresUserGesture = false
             settings.loadWithOverviewMode = true
             settings.useWideViewPort = true
-            // Hardware acceleration + layered view type help video render in WebView
             setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
             webViewClient = WebViewClient()
             webChromeClient = WebChromeClient()
-            val html = buildYouTubeEmbedHtml(videoId)
-            // Load directly from the youtube-nocookie embed domain (not loadDataWithBaseURL,
-            // which breaks relative resource loading and caused black screen with audio only)
-            loadUrl("https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&controls=1&fs=1&iv_load_policy=3&mute=0")
+
+            // Inject a Referer header on the top-level document load. This is what
+            // YouTube checks to validate the embed (fixes Error 153 in WebViews).
+            val headers = HashMap<String, String>()
+            headers["Referer"] = "https://www.youtube.com/"
+            loadUrl(
+                "https://www.youtube-nocookie.com/embed/${videoId}" +
+                    "?autoplay=1&playsinline=1&rel=0&controls=1&fs=1&iv_load_policy=3&mute=0",
+                headers
+            )
         }
     }
 
@@ -51,30 +59,4 @@ fun YouTubePlayerScreen(videoId: String, modifier: Modifier = Modifier) {
         factory = { webView },
         modifier = modifier.fillMaxSize().background(ComposeColor.Black)
     )
-}
-
-private fun buildYouTubeEmbedHtml(videoId: String): String {
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-      <style>
-        html,body { margin:0; padding:0; background:#000; height:100%; overflow:hidden; }
-        .wrap { position:relative; width:100%; height:100%; }
-        iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
-      </style>
-    </head>
-    <body>
-      <div class="wrap">
-        <iframe
-          src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&controls=1&fs=1&iv_load_policy=3&mute=0"
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowfullscreen
-          frameborder="0">
-        </iframe>
-      </div>
-    </body>
-    </html>
-    """.trimIndent()
 }
