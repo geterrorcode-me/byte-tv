@@ -1,19 +1,21 @@
 package com.byteai.tv.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -21,13 +23,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -39,18 +41,15 @@ import com.byteai.tv.data.Channel
 private val Accent = Color(0xFF02DEEF)
 private val Bg = Color(0xFF121326)
 private val CardBg = Color(0xFF1C2029)
-private val VisitedBg = Color(0xFF1E3A1E)       // dark green tint = visited
-private val VisitedAccent = Color(0xFF33CC66)    // green = visited
-private val VisitedText = Color(0xFF99FF99)
+private val FocusBorder = Color(0xFF02DEEF)   // cyan border = focused/current channel
 
 @Composable
 fun ChannelList(
     channels: List<Channel>,
     loading: Boolean,
     error: String?,
-    visited: Set<String>,                 // set of channel URLs already opened
-    scrollToFirst: Boolean = false,        // when true, jump to top (after "reset")
-    onResetView: () -> Unit = {},
+    focusedUrl: String?,                 // URL of the last opened channel (cursor/focus)
+    listState: LazyListState,             // hoisted so scroll position survives back navigation
     onChannelClick: (Channel) -> Unit
 ) {
     var query by remember { mutableStateOf(TextFieldValue("")) }
@@ -71,42 +70,19 @@ fun ChannelList(
             .toSortedMap()
     }
 
-    // Keep scroll position across back navigation
-    val listState = rememberLazyListState()
-    LaunchedEffect(scrollToFirst) {
-        if (scrollToFirst) {
-            listState.scrollToItem(0)
-            onResetView()
-        }
-    }
-
     Column(modifier = Modifier.fillMaxSize().background(Bg)) {
         // Header
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Byte TV",
-                color = Accent,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp
-            )
-            Spacer(Modifier.weight(1f))
-            // visited count
-            if (visited.isNotEmpty()) {
-                Text(
-                    text = "${visited.size} dibuka",
-                    color = Color(0xFF8A93A6),
-                    fontSize = 12.sp
-                )
-            }
+            Text("Byte TV", color = Accent, fontWeight = FontWeight.Bold, fontSize = 22.sp)
         }
 
-        // Search box
+        // Search
         Surface(color = CardBg, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "🔎", color = Color(0xFF8A93A6), fontSize = 16.sp)
+                Text("🔎", color = Color(0xFF8A93A6), fontSize = 16.sp)
                 BasicTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -115,7 +91,7 @@ fun ChannelList(
                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp)
                 ) { inner ->
                     if (query.text.isEmpty()) {
-                        Text(text = "Cari channel…", color = Color(0xFF8A93A6), fontSize = 15.sp)
+                        Text("Cari channel…", color = Color(0xFF8A93A6), fontSize = 15.sp)
                     }
                     inner()
                 }
@@ -123,13 +99,11 @@ fun ChannelList(
         }
 
         when {
-            loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Accent)
-            }
-            error != null -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
+            error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Gagal memuat: $error", color = Color(0xFFFF6B6B), modifier = Modifier.padding(24.dp))
             }
-            filtered.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            filtered.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Tidak ada channel cocok", color = Color.White)
             }
             else -> LazyColumn(
@@ -140,7 +114,7 @@ fun ChannelList(
                 grouped.forEach { (group, items) ->
                     item(key = "hdr_$group") {
                         Text(
-                            text = "$group (${items.size})",
+                            "$group (${items.size})",
                             color = Accent,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
@@ -150,7 +124,7 @@ fun ChannelList(
                     items(items, key = { "${it.name}_${it.url.hashCode()}_${it.url.take(24)}" }) { ch ->
                         ChannelRow(
                             channel = ch,
-                            isVisited = ch.url in visited,
+                            isFocused = ch.url == focusedUrl,
                             onClick = { onChannelClick(ch) }
                         )
                     }
@@ -161,25 +135,31 @@ fun ChannelList(
 }
 
 @Composable
-private fun ChannelRow(channel: Channel, isVisited: Boolean, onClick: () -> Unit) {
-    val cardColor = if (isVisited) VisitedBg else CardBg
-    val avatarColor = if (isVisited) VisitedAccent else Accent
-    val nameColor = if (isVisited) VisitedText else Color.White
+private fun ChannelRow(channel: Channel, isFocused: Boolean, onClick: () -> Unit) {
     Surface(
-        color = cardColor,
+        color = if (isFocused) Color(0xFF16303A) else CardBg,  // slightly cyan-tinted when focused
         shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isFocused) Modifier.border(2.dp, FocusBorder, RoundedCornerShape(10.dp))
+                else Modifier
+            )
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).background(avatarColor, RoundedCornerShape(8.dp)),
+                modifier = Modifier.size(40.dp).background(
+                    if (isFocused) FocusBorder else Accent,
+                    RoundedCornerShape(8.dp)
+                ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (isVisited) "✓" else channel.name.take(1).uppercase(),
+                    text = channel.name.take(1).uppercase(),
                     color = Bg,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
@@ -188,19 +168,12 @@ private fun ChannelRow(channel: Channel, isVisited: Boolean, onClick: () -> Unit
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(
                     text = channel.name,
-                    color = nameColor,
+                    color = if (isFocused) FocusBorder else Color.White,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (isVisited) {
-                    Text(
-                        text = "✓ sudah dibuka",
-                        color = Color(0xFF66BB66),
-                        fontSize = 11.sp
-                    )
-                }
             }
         }
     }
