@@ -1,6 +1,7 @@
 package com.byteai.tv.player
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -12,7 +13,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.ui.PlayerView
 
 @UnstableApi
@@ -26,9 +29,13 @@ fun PlayerScreen(
     val context = LocalContext.current
     val exoPlayer = remember(videoUrl, userAgent, referer) {
         ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(videoUrl)
-            val source = HlsMediaSource.Factory(dataSourceFactory(userAgent, referer))
-                .createMediaSource(mediaItem)
+            val dataSourceFactory = dataSourceFactory(userAgent, referer)
+            val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl))
+            val source: MediaSource = if (videoUrl.contains(".mpd", ignoreCase = true)) {
+                DashMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+            } else {
+                HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+            }
             setMediaSource(source)
             prepare()
             playWhenReady = true

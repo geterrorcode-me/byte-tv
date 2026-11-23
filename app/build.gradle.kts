@@ -11,8 +11,8 @@ android {
         applicationId = "com.byteai.tv"
         minSdk = 23
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.4.0"
+        versionCode = 7
+        versionName = "1.4.1"
     }
 
     signingConfigs {
@@ -72,9 +72,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
 
-    // Media3 / ExoPlayer
+    // Media3 / ExoPlayer (HLS + DASH)
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
 
     // TV (leanback) - minimal, wrapped into app for both form factors
