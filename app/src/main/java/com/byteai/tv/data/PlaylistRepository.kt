@@ -63,6 +63,7 @@ object PlaylistRepository {
         var pending: Channel? = null
         var pendingUa: String? = null
         var pendingReferer: String? = null
+        var pendingIsYt = false
         while (lines.hasNext()) {
             val line = lines.next()
             when {
@@ -76,8 +77,10 @@ object PlaylistRepository {
                         logo = attrs["tvg-logo"],
                         group = attrs["group-title"],
                         userAgent = null,
-                        referer = null
+                        referer = null,
+                        youtubeId = attrs["tvg-youtube"]
                     )
+                    pendingIsYt = !attrs["tvg-youtube"].isNullOrBlank()
                     pendingUa = null
                     pendingReferer = null
                 }
@@ -93,15 +96,19 @@ object PlaylistRepository {
                 }
                 line.startsWith("#") -> { /* skip other directives */ }
                 else -> {
+                    // URL line -> finalize channel
                     val ch = (pending ?: Channel(name = line, url = ""))
                         .copy(url = line, userAgent = pendingUa, referer = pendingReferer)
-                    if (ch.url.isNotEmpty()) result.add(ch)
+                    result.add(ch)
                     pending = null
+                    pendingIsYt = false
                     pendingUa = null
                     pendingReferer = null
                 }
             }
         }
+        // finalize any trailing pending (e.g. YouTube channels with no URL line)
+        pending?.let { result.add(it) }
         return result
     }
 

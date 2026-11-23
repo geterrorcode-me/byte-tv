@@ -23,6 +23,7 @@ import androidx.media3.common.util.UnstableApi
 import com.byteai.tv.data.Channel
 import com.byteai.tv.data.PlaylistRepository
 import com.byteai.tv.player.PlayerScreen
+import com.byteai.tv.player.YouTubePlayerScreen
 import com.byteai.tv.ui.ChannelList
 
 @UnstableApi
@@ -69,14 +70,21 @@ fun ByteTVApp() {
 
     val current = active
     if (current != null) {
-        // Fullscreen player
+        // Fullscreen player: YouTube live (WebView) or HLS/DASH (ExoPlayer)
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-            PlayerScreen(
-                videoUrl = current.url,
-                userAgent = current.userAgent,
-                referer = current.referer,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (!current.youtubeId.isNullOrBlank()) {
+                YouTubePlayerScreen(
+                    videoId = current.youtubeId,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                PlayerScreen(
+                    videoUrl = current.url,
+                    userAgent = current.userAgent,
+                    referer = current.referer,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     } else {
         ChannelList(
