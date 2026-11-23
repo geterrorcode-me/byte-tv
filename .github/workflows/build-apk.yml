@@ -36,7 +36,7 @@ jobs:
         with:
           name: byte-tv-apk
           path: app/build/outputs/apk/debug/*.apk
-          if-no-file-found: error
+          if-no-files-found: error
 
       - name: Publish to Release
         uses: softprops/action-gh-release@v2
