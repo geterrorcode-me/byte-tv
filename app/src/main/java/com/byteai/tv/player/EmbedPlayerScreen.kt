@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -82,6 +83,10 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
             setBackgroundColor(Color.BLACK)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            // RCTI+ embeds ads/player in cross-site iframes; Android WebView blocks
+            // third-party cookies by default, which can leave the ad/player black.
+            CookieManager.getInstance().setAcceptCookie(true)
+            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
             settings.mediaPlaybackRequiresUserGesture = false
             settings.loadWithOverviewMode = true
             settings.useWideViewPort = true
