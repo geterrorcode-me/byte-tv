@@ -71,6 +71,10 @@ object PlaylistRepository {
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
                     val name = extractName(line)
                     val attrs = parseAttrs(line)
+                    // Finalize any previous YouTube channel (no URL line follows EXTINF)
+                    if (pendingIsYt) {
+                        pending?.let { result.add(it) }
+                    }
                     pending = Channel(
                         name = name,
                         url = "",
