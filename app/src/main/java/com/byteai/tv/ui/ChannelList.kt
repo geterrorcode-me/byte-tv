@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,10 +27,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.byteai.tv.data.Channel
+
+private val Accent = Color(0xFF02DEEF)
+private val Bg = Color(0xFF121326)
+private val CardBg = Color(0xFF1C2029)
 
 @Composable
 fun ChannelList(
@@ -39,36 +44,81 @@ fun ChannelList(
     error: String?,
     onChannelClick: (Channel) -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF121326))) {
-        when {
-            loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF02DEEF)
-                )
-            }
-            error != null -> {
-                Text(
-                    text = "Gagal memuat: $error",
-                    color = Color(0xFFFF6B6B),
-                    modifier = Modifier.align(Alignment.Center).padding(24.dp)
-                )
-            }
-            channels.isEmpty() -> {
-                Text(
-                    text = "Tidak ada channel",
-                    color = Color.White,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            else -> {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(channels) { ch ->
-                        ChannelRow(ch) { onChannelClick(ch) }
+    var query by remember { mutableStateOf(TextFieldValue("")) }
+
+    val filtered = remember(channels, query.text) {
+        val q = query.text.trim().lowercase()
+        if (q.isEmpty()) channels
+        else channels.filter {
+            it.name.lowercase().contains(q) ||
+                (it.group?.lowercase()?.contains(q) ?: false)
+        }
+    }
+
+    // Group filtered channels by their group-title
+    val grouped = remember(filtered) {
+        filtered.groupBy { it.group?.ifBlank { "Lainnya" } ?: "Lainnya" }
+            .toSortedMap()
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(Bg)) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Byte TV",
+                color = Accent,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp
+            )
+        }
+
+        // Search box
+        Surface(color = CardBg, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "🔎", color = Color(0xFF8A93A6), fontSize = 16.sp)
+                BasicTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp)
+                ) { inner ->
+                    if (query.text.isEmpty()) {
+                        Text(text = "Cari channel…", color = Color(0xFF8A93A6), fontSize = 15.sp)
                     }
+                    inner()
+                }
+            }
+        }
+
+        when {
+            loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Accent)
+            }
+            error != null -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Gagal memuat: $error", color = Color(0xFFFF6B6B), modifier = Modifier.padding(24.dp))
+            }
+            filtered.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Tidak ada channel cocok", color = Color.White)
+            }
+            else -> LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                grouped.forEach { (group, items) ->
+                    item(key = "hdr_$group") {
+                        Text(
+                            text = "$group (${items.size})",
+                            color = Accent,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(items, key = { it.url }) { ch -> ChannelRow(ch) { onChannelClick(ch) } }
                 }
             }
         }
@@ -78,7 +128,7 @@ fun ChannelList(
 @Composable
 private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
     Surface(
-        color = Color(0xFF1C2029),
+        color = CardBg,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
@@ -87,12 +137,12 @@ private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).background(Color(0xFF02DEEF), RoundedCornerShape(8.dp)),
+                modifier = Modifier.size(40.dp).background(Accent, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = channel.name.take(1).uppercase(),
-                    color = Color(0xFF121326),
+                    color = Bg,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -106,14 +156,6 @@ private fun ChannelRow(channel: Channel, onClick: () -> Unit) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                channel.group?.let {
-                    Text(
-                        text = it,
-                        color = Color(0xFF8A93A6),
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
-                }
             }
         }
     }
