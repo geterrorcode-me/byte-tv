@@ -1,4 +1,4 @@
-package com.byte.tv.player
+package com.byteai.tv.player
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

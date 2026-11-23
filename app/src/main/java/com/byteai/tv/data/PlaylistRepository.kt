@@ -1,4 +1,4 @@
-package com.byte.tv.data
+package com.byteai.tv.data
 
 import android.util.Log
 import java.net.HttpURLConnection

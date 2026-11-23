@@ -1,4 +1,4 @@
-package com.byte.tv
+package com.byteai.tv
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,10 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.media3.common.util.UnstableApi
-import com.byte.tv.data.Channel
-import com.byte.tv.data.PlaylistRepository
-import com.byte.tv.player.PlayerScreen
-import com.byte.tv.ui.ChannelList
+import com.byteai.tv.data.Channel
+import com.byteai.tv.data.PlaylistRepository
+import com.byteai.tv.player.PlayerScreen
+import com.byteai.tv.ui.ChannelList
 
 @UnstableApi
 class MainActivity : ComponentActivity() {

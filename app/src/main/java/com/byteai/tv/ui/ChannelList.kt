@@ -1,4 +1,4 @@
-package com.byte.tv.ui
+package com.byteai.tv.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.byte.tv.data.Channel
+import com.byteai.tv.data.Channel
 
 @Composable
 fun ChannelList(

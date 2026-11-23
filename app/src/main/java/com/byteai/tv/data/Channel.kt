@@ -1,4 +1,4 @@
-package com.byte.tv.data
+package com.byteai.tv.data
 
 data class Channel(
     val name: String,

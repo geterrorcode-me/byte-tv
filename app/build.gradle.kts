@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.byte.tv"
+    namespace = "com.byteai.tv"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.byte.tv"
+        applicationId = "com.byteai.tv"
         minSdk = 23
         targetSdk = 34
         versionCode = 1
