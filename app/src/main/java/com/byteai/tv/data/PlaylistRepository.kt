@@ -8,8 +8,14 @@ import java.util.concurrent.Executors
 
 /**
  * Lightweight M3U playlist parser + fetcher.
- * Parses #EXTINF lines, #EXTVLCOPT headers (user-agent / referrer), URL lines,
- * and tvg-youtube / tvg-embed attributes into Channel objects.
+ *
+ * Playlist convention (every channel has exactly one URL line):
+ *   - HLS/DASH:  <url>
+ *   - Embed page: embed://<url>   -> loaded in a WebView
+ *   - YouTube:    yt://<videoId>   -> loaded in the YouTube WebView
+ *
+ * This keeps the parser a simple, uniform state machine (no special cases that
+ * previously dropped channels without a URL line).
  */
 object PlaylistRepository {
 
@@ -26,7 +32,9 @@ object PlaylistRepository {
         executor.execute {
             try {
                 val text = context.assets.open("channels.m3u").bufferedReader().use { it.readText() }
-                callback.onResult(parseM3U(text))
+                val channels = parseM3U(text)
+                Log.d(TAG, "Parsed ${channels.size} channels")
+                callback.onResult(channels)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load local playlist", e)
                 callback.onError(e.message ?: "Unknown error")
@@ -45,11 +53,8 @@ object PlaylistRepository {
                 }
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
                 val channels = parseM3U(text)
-                if (channels.isEmpty()) {
-                    callback.onError("Playlist kosong")
-                } else {
-                    callback.onResult(channels)
-                }
+                if (channels.isEmpty()) callback.onError("Playlist kosong")
+                else callback.onResult(channels)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load playlist", e)
                 callback.onError(e.message ?: "Unknown error")
@@ -58,68 +63,50 @@ object PlaylistRepository {
     }
 
     fun parseM3U(content: String): List<Channel> {
-        val lines = content.lineSequence().map { it.trim() }.iterator()
         val result = mutableListOf<Channel>()
-        var pending: Channel? = null
-        var pendingUa: String? = null
-        var pendingReferer: String? = null
-        while (lines.hasNext()) {
-            val line = lines.next()
+        var name: String? = null
+        var group: String? = null
+        var logo: String? = null
+        var ua: String? = null
+        var referer: String? = null
+
+        for (raw in content.lineSequence()) {
+            val line = raw.trim()
             when {
                 line.isEmpty() -> {}
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
-                    // Safety: finalize a pending HLS channel that never got a URL line
-                    pending?.let {
-                        if (it.url.isEmpty()) result.add(it)
-                    }
-                    val name = extractName(line)
                     val attrs = parseAttrs(line)
-                    val yt = attrs["tvg-youtube"]
-                    val embed = attrs["tvg-embed"]
-                    val ch = Channel(
-                        name = name,
-                        url = "",
-                        logo = attrs["tvg-logo"],
-                        group = attrs["group-title"],
-                        userAgent = null,
-                        referer = null,
-                        youtubeId = yt,
-                        embedUrl = embed
-                    )
-                    if (!yt.isNullOrBlank() || !embed.isNullOrBlank()) {
-                        // YouTube / embed channel: no URL line follows -> finalize immediately
-                        result.add(ch)
-                        pending = null
-                    } else {
-                        // HLS channel: wait for the URL line
-                        pending = ch
-                    }
-                    pendingUa = null
-                    pendingReferer = null
+                    name = extractName(line)
+                    group = attrs["group-title"]
+                    logo = attrs["tvg-logo"]
+                    ua = null
+                    referer = null
                 }
                 line.startsWith("#EXTVLCOPT", ignoreCase = true) -> {
                     val opt = line.substringAfter(":", "").trim()
                     when {
                         opt.startsWith("http-user-agent", ignoreCase = true) ->
-                            pendingUa = opt.substringAfter("=", "").trim()
+                            ua = opt.substringAfter("=", "").trim()
                         opt.startsWith("http-referrer", ignoreCase = true) ->
-                            pendingReferer = opt.substringAfter("=", "").trim()
+                            referer = opt.substringAfter("=", "").trim()
                     }
                 }
-                line.startsWith("#") -> { /* skip other directives */ }
+                line.startsWith("#") -> { /* other directives */ }
                 else -> {
-                    // URL line -> finalize channel
-                    val ch = (pending ?: Channel(name = line, url = ""))
-                        .copy(url = line, userAgent = pendingUa, referer = pendingReferer)
+                    // URL line -> build channel from the pending metadata
+                    val ch = Channel(
+                        name = name ?: line,
+                        url = line,
+                        logo = logo,
+                        group = group,
+                        userAgent = ua,
+                        referer = referer
+                    )
                     result.add(ch)
-                    pending = null
-                    pendingUa = null
-                    pendingReferer = null
+                    name = null; group = null; logo = null; ua = null; referer = null
                 }
             }
         }
-        // finalize any trailing pending HLS channel
-        pending?.let { result.add(it) }
         return result
     }
 
