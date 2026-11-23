@@ -8,8 +8,8 @@ import java.util.concurrent.Executors
 
 /**
  * Lightweight M3U playlist parser + fetcher.
- * Parses #EXTINF lines, #EXTVLCOPT headers (user-agent / referrer) and URL lines
- * into Channel objects so premium channels that require specific UA/Referer still play.
+ * Parses #EXTINF lines, #EXTVLCOPT headers (user-agent / referrer), URL lines,
+ * and tvg-youtube / tvg-embed attributes into Channel objects.
  */
 object PlaylistRepository {
 
@@ -63,33 +63,40 @@ object PlaylistRepository {
         var pending: Channel? = null
         var pendingUa: String? = null
         var pendingReferer: String? = null
-        var pendingIsYt = false
         while (lines.hasNext()) {
             val line = lines.next()
             when {
                 line.isEmpty() -> {}
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
+                    // Safety: finalize a pending HLS channel that never got a URL line
+                    pending?.let {
+                        if (it.url.isEmpty()) result.add(it)
+                    }
                     val name = extractName(line)
                     val attrs = parseAttrs(line)
-                    // Finalize any previous YouTube channel (no URL line follows EXTINF)
-                    if (pendingIsYt) {
-                        pending?.let { result.add(it) }
-                    }
-                    pending = Channel(
+                    val yt = attrs["tvg-youtube"]
+                    val embed = attrs["tvg-embed"]
+                    val ch = Channel(
                         name = name,
                         url = "",
                         logo = attrs["tvg-logo"],
                         group = attrs["group-title"],
                         userAgent = null,
                         referer = null,
-                        youtubeId = attrs["tvg-youtube"],
-                        embedUrl = attrs["tvg-embed"]
+                        youtubeId = yt,
+                        embedUrl = embed
                     )
-                    pendingIsYt = !attrs["tvg-youtube"].isNullOrBlank()
+                    if (!yt.isNullOrBlank() || !embed.isNullOrBlank()) {
+                        // YouTube / embed channel: no URL line follows -> finalize immediately
+                        result.add(ch)
+                        pending = null
+                    } else {
+                        // HLS channel: wait for the URL line
+                        pending = ch
+                    }
                     pendingUa = null
                     pendingReferer = null
                 }
-                // Capture VLC options (UA / referrer) that apply to the next URL line
                 line.startsWith("#EXTVLCOPT", ignoreCase = true) -> {
                     val opt = line.substringAfter(":", "").trim()
                     when {
@@ -106,13 +113,12 @@ object PlaylistRepository {
                         .copy(url = line, userAgent = pendingUa, referer = pendingReferer)
                     result.add(ch)
                     pending = null
-                    pendingIsYt = false
                     pendingUa = null
                     pendingReferer = null
                 }
             }
         }
-        // finalize any trailing pending (e.g. YouTube channels with no URL line)
+        // finalize any trailing pending HLS channel
         pending?.let { result.add(it) }
         return result
     }
