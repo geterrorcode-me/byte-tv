@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.graphics.Color
-import android.view.KeyEvent as AndroidKeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
@@ -37,7 +36,6 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
@@ -153,14 +151,11 @@ private fun MuteButton(
             .focusable()
             .clickable { onClick() }
             .onKeyEvent { event ->
-                if (event.type == KeyEventType.KeyUp &&
-                    (event.key == Key.Enter ||
-                        event.key == Key.DirectionCenter ||
-                        event.nativeKeyCode == AndroidKeyEvent.KEYCODE_DPAD_CENTER ||
-                        event.nativeKeyCode == AndroidKeyEvent.KEYCODE_ENTER)
-                ) {
-                    onClick()
-                    true
+                if (event.type == KeyEventType.KeyUp) {
+                    when (event.key) {
+                        Key.Enter, Key.DirectionCenter -> { onClick(); true }
+                        else -> false
+                    }
                 } else {
                     false
                 }
