@@ -71,7 +71,12 @@ fun ByteTVApp() {
     if (current != null) {
         // Fullscreen player
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-            PlayerScreen(videoUrl = current.url, modifier = Modifier.fillMaxSize())
+            PlayerScreen(
+                videoUrl = current.url,
+                userAgent = current.userAgent,
+                referer = current.referer,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     } else {
         ChannelList(

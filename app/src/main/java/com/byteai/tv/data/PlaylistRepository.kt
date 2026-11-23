@@ -8,7 +8,8 @@ import java.util.concurrent.Executors
 
 /**
  * Lightweight M3U playlist parser + fetcher.
- * Parses #EXTINF lines and their following URL lines into Channel objects.
+ * Parses #EXTINF lines, #EXTVLCOPT headers (user-agent / referrer) and URL lines
+ * into Channel objects so premium channels that require specific UA/Referer still play.
  */
 object PlaylistRepository {
 
@@ -20,10 +21,7 @@ object PlaylistRepository {
         fun onError(message: String)
     }
 
-    /**
-     * Load the bundled (offline-audited) channel list from assets.
-     * This is the curated list of channels that passed the connectivity audit.
-     */
+    /** Load the bundled (offline-audited) channel list from assets. */
     fun loadLocal(context: Context, callback: Callback) {
         executor.execute {
             try {
@@ -63,7 +61,8 @@ object PlaylistRepository {
         val lines = content.lineSequence().map { it.trim() }.iterator()
         val result = mutableListOf<Channel>()
         var pending: Channel? = null
-        var pendingName: String? = null
+        var pendingUa: String? = null
+        var pendingReferer: String? = null
         while (lines.hasNext()) {
             val line = lines.next()
             when {
@@ -71,19 +70,35 @@ object PlaylistRepository {
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
                     val name = extractName(line)
                     val attrs = parseAttrs(line)
-                    pendingName = name
                     pending = Channel(
                         name = name,
                         url = "",
                         logo = attrs["tvg-logo"],
-                        group = attrs["group-title"]
+                        group = attrs["group-title"],
+                        userAgent = null,
+                        referer = null
                     )
+                    pendingUa = null
+                    pendingReferer = null
                 }
-                line.startsWith("#") -> { /* skip other directives like #EXTVLCOPT */ }
+                // Capture VLC options (UA / referrer) that apply to the next URL line
+                line.startsWith("#EXTVLCOPT", ignoreCase = true) -> {
+                    val opt = line.substringAfter(":", "").trim()
+                    when {
+                        opt.startsWith("http-user-agent", ignoreCase = true) ->
+                            pendingUa = opt.substringAfter("=", "").trim()
+                        opt.startsWith("http-referrer", ignoreCase = true) ->
+                            pendingReferer = opt.substringAfter("=", "").trim()
+                    }
+                }
+                line.startsWith("#") -> { /* skip other directives */ }
                 else -> {
-                    val ch = pending?.copy(url = line) ?: Channel(name = line, url = line)
+                    val ch = (pending ?: Channel(name = line, url = ""))
+                        .copy(url = line, userAgent = pendingUa, referer = pendingReferer)
                     if (ch.url.isNotEmpty()) result.add(ch)
                     pending = null
+                    pendingUa = null
+                    pendingReferer = null
                 }
             }
         }
