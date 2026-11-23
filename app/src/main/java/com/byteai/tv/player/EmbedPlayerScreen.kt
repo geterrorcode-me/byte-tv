@@ -144,10 +144,10 @@ private fun MuteButton(
         modifier = Modifier
             .size(56.dp)
             .clip(CircleShape)
-            .background(if (muted) Color(0xCC000000) else Color(0xCC1E3A1E))
+            .background(if (muted) ComposeColor(0xCC000000) else ComposeColor(0xCC1E3A1E))
             .border(
                 width = if (focused) 3.dp else 1.dp,
-                color = if (focused) ComposeColor(0xFF02DEEF) else Color(0x66FFFFFF),
+                color = if (focused) ComposeColor(0xFF02DEEF) else ComposeColor(0x66FFFFFF),
                 shape = CircleShape
             )
             .focusRequester(focusRequester)
