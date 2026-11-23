@@ -35,3 +35,15 @@ jobs:
           name: byte-tv-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-file-found: error
+
+      - name: Publish to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Byte TV APK (build ${{ github.run_number }})
+          files: app/build/outputs/apk/debug/*.apk
+          body: |
+            Byte TV — Android TV + mobile live TV streaming app.
+            Download `app-debug.apk` di bawah, install ke Android TV / HP.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
