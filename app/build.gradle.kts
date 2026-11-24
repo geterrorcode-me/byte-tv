@@ -11,8 +11,8 @@ android {
         applicationId = "com.byteai.tv"
         minSdk = 23
         targetSdk = 34
-        versionCode = 23
-        versionName = "1.12.1"
+        versionCode = 24
+        versionName = "1.13.0"
     }
 
     signingConfigs {
