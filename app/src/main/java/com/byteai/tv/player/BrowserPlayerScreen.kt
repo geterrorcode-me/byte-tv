@@ -125,7 +125,7 @@ fun BrowserPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
                     }
                 }
             }
-            webChromeClient = FullscreenWebChromeClient(this)
+            webChromeClient = BrowserFullscreenWebChromeClient(this)
             loadUrl(embedUrl)
         }
     }
@@ -177,7 +177,7 @@ fun BrowserPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
     }
 }
 
-private class FullscreenWebChromeClient(private val webView: WebView) : WebChromeClient() {
+private class BrowserFullscreenWebChromeClient(private val webView: WebView) : WebChromeClient() {
     private var customView: View? = null
     private var callback: CustomViewCallback? = null
 
