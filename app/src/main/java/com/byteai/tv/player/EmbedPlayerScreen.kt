@@ -110,6 +110,27 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
                     loadError = null
                 }
 
+                override fun onPageFinished(view: WebView, url: String?) {
+                    super.onPageFinished(view, url)
+                    // RCTI+ (JWPlayer) uses autostart:false and its Play button is not
+                    // D-pad focusable on Android TV -> screen stays black. Start JWPlayer
+                    // programmatically instead of relying on a tappable HTML button.
+                    view.evaluateJavascript(
+                        "(function(){try{if(window.jwplayer&&jwplayer().ready){" +
+                            "var p=jwplayer().play();if(p&&p.catch){p.catch(function(){jwplayer().setMute(true);jwplayer().play();});}" +
+                            "return 'jw';}}catch(e){}" +
+                            "var v=document.querySelector('video');if(v){v.muted=true;v.play();return 'html5';}return 'wait';})();",
+                        null
+                    )
+                    view.postDelayed({
+                        view.evaluateJavascript(
+                            "(function(){try{if(window.jwplayer&&jwplayer().ready&&!jwplayer().playing){jwplayer().play();}}catch(e){}" +
+                                "var v=document.querySelector('video');if(v&&v.paused){v.muted=true;v.play();}})();",
+                            null
+                        )
+                    }, 1200)
+                }
+
                 override fun onReceivedError(
                     view: WebView,
                     request: WebResourceRequest,
@@ -136,6 +157,20 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
             }
             webChromeClient = FullscreenWebChromeClient(this)
             loadUrl(embedUrl)
+        }
+    }
+
+    // RCTI+ (JWPlayer) is configured with autostart:false and its poster/Play button
+    // is not D-pad focusable on Android TV, so the screen stays black. Trigger the
+    // player programmatically once the page is ready instead.
+    LaunchedEffect(embedUrl) {
+        repeat(12) {
+            delay(700)
+            webView.evaluateJavascript(
+                "(function(){try{if(window.jwplayer&&jwplayer().ready&&!jwplayer().playing){jwplayer().play();}}catch(e){}" +
+                    "var v=document.querySelector('video');if(v&&v.paused){v.muted=true;v.play();}})();",
+                null
+            )
         }
     }
 
@@ -249,9 +284,11 @@ private fun MuteButton(
 
 private fun setWebViewMuted(webView: WebView, muted: Boolean) {
     val js = if (muted) {
-        "document.querySelectorAll('video,audio').forEach(function(e){e.muted=true;});"
+        "(function(){try{if(window.jwplayer&&jwplayer().ready){jwplayer().setMute(true);}}catch(e){}" +
+            "document.querySelectorAll('video,audio').forEach(function(e){e.muted=true;});})();"
     } else {
-        "document.querySelectorAll('video,audio').forEach(function(e){e.muted=false;e.volume=1.0;});"
+        "(function(){try{if(window.jwplayer&&jwplayer().ready){jwplayer().setMute(false);jwplayer().setVolume(100);}}catch(e){}" +
+            "document.querySelectorAll('video,audio').forEach(function(e){e.muted=false;e.volume=1.0;});})();"
     }
     webView.evaluateJavascript(js, null)
 }
