@@ -99,7 +99,10 @@ fun RctiBrowserScreen(embedUrl: String, modifier: Modifier = Modifier) {
             settings.useWideViewPort = true
             settings.setSupportZoom(false)
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // LAYER_TYPE_NONE (not HARDWARE): RCTI+ embeds the player in an iframe;
+            // hardware layers render iframe video as a black screen on many TV boxes,
+            // while the TV's own browser (also WebView-based) renders it fine.
+            setLayerType(View.LAYER_TYPE_NONE, null)
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
