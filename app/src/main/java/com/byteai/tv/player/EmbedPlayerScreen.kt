@@ -3,22 +3,15 @@ package com.byteai.tv.player
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,15 +50,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.delay
 
 /**
- * WebView player for embed pages (RCTI+, detik, etc).
+ * WebView player for embed pages (Trans7, TransTV, SCTV, detik, etc).
  *
- * Notes:
- * - Never mutate the User-Agent to carry a Referer: appending headers on every
- *   page start grew the request header until nginx replied "400 Request Header
- *   Or Cookie Too Large" and the WebView reloaded in a loop.
- * - The embed page (not the app) owns the player and its Play button; the app
- *   only enables autoplay and starts muted.
- * - A failed page is shown once; the WebView does not auto-retry endlessly.
+ * This screen intentionally does NOT try to auto-start playback: the embed page owns
+ * its own player and Play button. We only enable normal WebView playback and provide a
+ * D-pad-reachable mute/unmute button that starts muted.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -75,7 +64,6 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
 
     var muted by remember { mutableStateOf(true) }
     var controlsVisible by remember { mutableStateOf(true) }
-    var loadError by remember { mutableStateOf<String?>(null) }
     val muteFocus = remember { FocusRequester() }
 
     LaunchedEffect(controlsVisible, muted) {
@@ -104,73 +92,9 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
             CookieManager.getInstance().setAcceptCookie(true)
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
-            webViewClient = object : WebViewClient() {
-                override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
-                    super.onPageStarted(view, url, favicon)
-                    loadError = null
-                }
-
-                override fun onPageFinished(view: WebView, url: String?) {
-                    super.onPageFinished(view, url)
-                    // RCTI+ (JWPlayer) uses autostart:false and its Play button is not
-                    // D-pad focusable on Android TV -> screen stays black. Start JWPlayer
-                    // programmatically instead of relying on a tappable HTML button.
-                    view.evaluateJavascript(
-                        "(function(){try{if(window.jwplayer&&jwplayer().ready){" +
-                            "var p=jwplayer().play();if(p&&p.catch){p.catch(function(){jwplayer().setMute(true);jwplayer().play();});}" +
-                            "return 'jw';}}catch(e){}" +
-                            "var v=document.querySelector('video');if(v){v.muted=true;v.play();return 'html5';}return 'wait';})();",
-                        null
-                    )
-                    view.postDelayed({
-                        view.evaluateJavascript(
-                            "(function(){try{if(window.jwplayer&&jwplayer().ready&&!jwplayer().playing){jwplayer().play();}}catch(e){}" +
-                                "var v=document.querySelector('video');if(v&&v.paused){v.muted=true;v.play();}})();",
-                            null
-                        )
-                    }, 1200)
-                }
-
-                override fun onReceivedError(
-                    view: WebView,
-                    request: WebResourceRequest,
-                    error: WebResourceError
-                ) {
-                    super.onReceivedError(view, request, error)
-                    // Only report main-frame failures; ad/analytics errors are noise.
-                    if (request.isForMainFrame) {
-                        loadError = error.description?.toString()
-                            ?: "Gagal memuat halaman channel"
-                    }
-                }
-
-                override fun onReceivedHttpError(
-                    view: WebView,
-                    request: WebResourceRequest,
-                    errorResponse: WebResourceResponse
-                ) {
-                    super.onReceivedHttpError(view, request, errorResponse)
-                    if (request.isForMainFrame) {
-                        loadError = "HTTP ${errorResponse.statusCode}: ${errorResponse.reasonPhrase}"
-                    }
-                }
-            }
+            webViewClient = WebViewClient()
             webChromeClient = FullscreenWebChromeClient(this)
             loadUrl(embedUrl)
-        }
-    }
-
-    // RCTI+ (JWPlayer) is configured with autostart:false and its poster/Play button
-    // is not D-pad focusable on Android TV, so the screen stays black. Trigger the
-    // player programmatically once the page is ready instead.
-    LaunchedEffect(embedUrl) {
-        repeat(12) {
-            delay(700)
-            webView.evaluateJavascript(
-                "(function(){try{if(window.jwplayer&&jwplayer().ready&&!jwplayer().playing){jwplayer().play();}}catch(e){}" +
-                    "var v=document.querySelector('video');if(v&&v.paused){v.muted=true;v.play();}})();",
-                null
-            )
         }
     }
 
@@ -211,27 +135,10 @@ fun EmbedPlayerScreen(embedUrl: String, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // Main-frame error notice (no auto reload loop).
-        if (loadError != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Tidak bisa memuat channel\n$loadError",
-                    color = ComposeColor.White,
-                    fontSize = 15.sp
-                )
-            }
-        }
-
-        // D-pad-reachable mute/unmute (auto-hides)
-        AnimatedVisibility(
+        androidx.compose.animation.AnimatedVisibility(
             visible = controlsVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.fadeOut(),
             modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
         ) {
             MuteButton(
@@ -284,11 +191,9 @@ private fun MuteButton(
 
 private fun setWebViewMuted(webView: WebView, muted: Boolean) {
     val js = if (muted) {
-        "(function(){try{if(window.jwplayer&&jwplayer().ready){jwplayer().setMute(true);}}catch(e){}" +
-            "document.querySelectorAll('video,audio').forEach(function(e){e.muted=true;});})();"
+        "document.querySelectorAll('video,audio').forEach(function(e){e.muted=true;});"
     } else {
-        "(function(){try{if(window.jwplayer&&jwplayer().ready){jwplayer().setMute(false);jwplayer().setVolume(100);}}catch(e){}" +
-            "document.querySelectorAll('video,audio').forEach(function(e){e.muted=false;e.volume=1.0;});})();"
+        "document.querySelectorAll('video,audio').forEach(function(e){e.muted=false;e.volume=1.0;});"
     }
     webView.evaluateJavascript(js, null)
 }
