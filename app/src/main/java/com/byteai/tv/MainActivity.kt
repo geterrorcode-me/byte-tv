@@ -42,9 +42,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.util.UnstableApi
 import com.byteai.tv.data.Channel
 import com.byteai.tv.data.PlaylistRepository
+import com.byteai.tv.player.BrowserPlayerScreen
 import com.byteai.tv.player.EmbedPlayerScreen
 import com.byteai.tv.player.PlayerScreen
-import com.byteai.tv.player.RctiPlusPlayerScreen
 import com.byteai.tv.player.RctiPlusResolver
 import com.byteai.tv.player.YouTubePlayerScreen
 import com.byteai.tv.ui.ChannelList
@@ -133,7 +133,7 @@ fun ByteTVApp() {
                 when {
                     ch.youtubeId != null -> YouTubePlayerScreen(ch.youtubeId!!, Modifier.fillMaxSize())
                     ch.embedUrl != null && RctiPlusResolver.isRctiPlus(ch.embedUrl!!) ->
-                        RctiPlusPlayerScreen(ch.embedUrl!!, Modifier.fillMaxSize())
+                        BrowserPlayerScreen(ch.embedUrl!!, Modifier.fillMaxSize())
                     ch.embedUrl != null -> EmbedPlayerScreen(ch.embedUrl!!, Modifier.fillMaxSize())
                     else -> PlayerScreen(ch.url, ch.userAgent, ch.referer, Modifier.fillMaxSize())
                 }
