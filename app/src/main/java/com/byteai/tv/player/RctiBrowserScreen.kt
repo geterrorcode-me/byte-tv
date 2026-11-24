@@ -86,8 +86,8 @@ fun RctiBrowserScreen(embedUrl: String, modifier: Modifier = Modifier) {
     }
 
     // Tap = a genuine user gesture, which is what JWPlayer's autostart:false needs.
-    fun userGesture() {
-        webView.evaluateJavascript(
+    fun userGesture(view: WebView) {
+        view.evaluateJavascript(
             "(function(){var v=document.querySelector('video');if(v){v.muted=false;v.play().catch(function(){});}" +
                 "var el=document.getElementById('videoplayer');if(el){el.click();}})();",
             null
@@ -154,7 +154,7 @@ fun RctiBrowserScreen(embedUrl: String, modifier: Modifier = Modifier) {
                     }
                 }
             }
-            webChromeClient = FullscreenWebChromeClient(this)
+            webChromeClient = RctiFullscreenWebChromeClient(this)
             loadUrl(embedUrl)
         }
     }
@@ -174,7 +174,7 @@ fun RctiBrowserScreen(embedUrl: String, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             .background(ComposeColor.Black)
-            .clickable { userGesture(); controlsVisible = true }
+            .clickable { userGesture(webView); controlsVisible = true }
     ) {
         AndroidView(
             factory = { ctx ->
@@ -199,7 +199,7 @@ fun RctiBrowserScreen(embedUrl: String, modifier: Modifier = Modifier) {
                     if (event.type == KeyEventType.KeyUp &&
                         (event.key == Key.Enter || event.key == Key.DirectionCenter)
                     ) {
-                        userGesture()
+                        userGesture(webView)
                         controlsVisible = true
                         true
                     } else false
@@ -280,7 +280,7 @@ private fun setWebViewMuted(webView: WebView, muted: Boolean) {
     webView.evaluateJavascript(js, null)
 }
 
-private class FullscreenWebChromeClient(private val webView: WebView) : WebChromeClient() {
+private class RctiFullscreenWebChromeClient(private val webView: WebView) : WebChromeClient() {
     private var customView: View? = null
     private var callback: CustomViewCallback? = null
 
