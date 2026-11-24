@@ -11,8 +11,8 @@ android {
         applicationId = "com.byteai.tv"
         minSdk = 23
         targetSdk = 34
-        versionCode = 30
-        versionName = "1.19.0"
+        versionCode = 31
+        versionName = "1.20.0"
     }
 
     signingConfigs {
@@ -80,9 +80,6 @@ dependencies {
 
     // TV (leanback) - minimal, wrapped into app for both form factors
     implementation("androidx.tv:tv-material:1.0.0")
-
-    // Chrome Custom Tabs (in-app browser for RCTI+ embed pages)
-    implementation("androidx.browser:browser:1.8.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
